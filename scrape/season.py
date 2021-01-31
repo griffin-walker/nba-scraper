@@ -1,29 +1,9 @@
-"""Module for scraping basketball reference for game stats."""
+"""Get and parse season schedule."""
 
-import requests
 from bs4 import BeautifulSoup, element
-import json
 from tqdm import tqdm
 
-
-BASE_URL = "https://basketball-reference.com"
-HEADERS = {"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"}
-
-
-def get_and_soup(extension: str) -> BeautifulSoup:
-    """
-    :param game_id: Combination of date (YYYYMMDD) and home team identifer (ex. CHI)
-    :type game_id: str
-
-    :return: Parsed html page result
-    :rtype: BeautifulSoup
-    """
-    response = requests.get(BASE_URL + extension, headers=HEADERS)
-    if response.ok:
-        soup = BeautifulSoup(response.content)
-        return soup
-    else:
-        return response.status_code
+from scrape.query import get_and_soup
 
 
 def get_season_months(season: int) -> list:
@@ -67,8 +47,8 @@ def parse_monthly_schedule(month_soup: BeautifulSoup):
                 continue
             else:
                 parsed_rows.append(parse_schedule_row(tr))
-        except ValueError:
-            raise Exception("Value Error")
+        except AttributeError:
+            None
     return parsed_rows
 
 
@@ -82,15 +62,9 @@ def get_season_schedule(season: int):
     return games
 
 
-def get_seasons(seasons=range(2011, 2022)):
+def get_seasons(seasons: list):
     season_game_map = {}
     for season in tqdm(seasons):
         games = get_season_schedule(season=season)
         season_game_map[season] = games
     return season_game_map
-
-
-if __name__ == "__main__":
-    season_game_map = get_seasons()
-    with open("season_game_map.json", "w") as outfile:
-        json.dump(season_game_map, outfile)
